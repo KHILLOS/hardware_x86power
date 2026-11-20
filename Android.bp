@@ -1,0 +1,25 @@
+/*
+ * Copyright (C) 2016 The Android-x86 Open Source Project
+ *
+ * Licensed under the GNU General Public License Version 2 or later.
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.gnu.org/licenses/gpl.html
+ */
+
+cc_library_shared {
+    name: "power.x86",
+    srcs: ["power.c"],
+    relative_install_path: "hw",
+    header_libs: ["libhardware_headers"],
+    shared_libs: [
+        "liblog",
+        "libcutils",
+    ],
+    vendor_available: true,
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}

@@ -11,22 +11,19 @@
  *
  */
 #include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include <unistd.h>
 
 #define LOG_TAG "PowerHAL"
-#include <utils/Log.h>
+#include <log/log.h>
 
 #include <hardware/hardware.h>
 #include <hardware/power.h>
 #include <cutils/properties.h>
-#if 0
-#include <cutils/probe_module.h>
-#endif
-
-extern int delete_module(const char *, unsigned int);
 
 #define SYS_CPU "/sys/devices/system/cpu"
 #define CPU_ONLINE "1"
@@ -36,19 +33,32 @@ extern int delete_module(const char *, unsigned int);
 
 static void set_nonboot_cpu_state(const char *state)
 {
-    static int cpu_n_fd;
     char p[PATH_MAX];
     int cpu_n;
 
     for (cpu_n = 1; ; cpu_n++) {
-        snprintf(p, PATH_MAX, SYS_CPU "/cpu%d/online", cpu_n);
-        cpu_n_fd = open(p, O_RDWR);
-        if (cpu_n_fd < 0) {
+        int path_len = snprintf(p, sizeof(p), SYS_CPU "/cpu%d/online", cpu_n);
+        if (path_len < 0 || (size_t)path_len >= sizeof(p)) {
+            ALOGE("Invalid path for CPU%d", cpu_n);
             return;
         }
+
+        int cpu_n_fd = open(p, O_RDWR);
+        if (cpu_n_fd < 0) {
+            ALOGV("Stop CPU setup at CPU%d: %s", cpu_n, strerror(errno));
+            return;
+        }
+
         ALOGV("Set CPU%d_online state %s ", cpu_n, state);
-        write(cpu_n_fd, state, 1);
-        close(cpu_n_fd);
+        ssize_t written = write(cpu_n_fd, state, 1);
+        if (written < 0) {
+            ALOGW("Set CPU%d_online state %s failed: %s", cpu_n, state, strerror(errno));
+        } else if (written != 1) {
+            ALOGW("Set CPU%d_online state %s wrote %zd bytes", cpu_n, state, written);
+        }
+        if (close(cpu_n_fd) != 0) {
+            ALOGW("Close CPU%d_online failed: %s", cpu_n, strerror(errno));
+        }
     }
 }
 
@@ -58,26 +68,6 @@ static void power_init(struct power_module *module UNUSED)
 
 static void power_set_interactive(struct power_module *module UNUSED, int on)
 {
-#if 0
-    char mod[PROPERTY_VALUE_MAX];
-    if (!property_get_bool("wlan.no-unload-driver", 0)
-            && property_get("wlan.modname", mod, NULL)) {
-        if (on) {
-            if (insmod_by_dep(mod, "", NULL, 0, NULL)) {
-                ALOGE("insmod %s failed", mod);
-            } else {
-                ALOGD("reload %s OK", mod);
-            }
-        } else {
-            if (delete_module(mod, O_NONBLOCK)) {
-                ALOGE("rmmod %s failed", mod);
-            } else {
-                ALOGD("unload %s OK", mod);
-            }
-        }
-    }
-#endif
-
     if (property_get_bool("power.nonboot-cpu-off", 1)) {
         set_nonboot_cpu_state(on ? CPU_ONLINE : CPU_OFFLINE);
     }
