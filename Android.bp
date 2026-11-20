@@ -23,3 +23,20 @@ cc_library_shared {
         "-Werror",
     ],
 }
+
+cc_binary {
+    name: "x86power_smoke",
+    srcs: ["tests/x86power_smoke.c"],
+    header_libs: ["libhardware_headers"],
+    shared_libs: [
+        "libhardware",
+        "liblog",
+        "libcutils",
+    ],
+    required: ["power.x86"],
+    vendor_available: true,
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}
