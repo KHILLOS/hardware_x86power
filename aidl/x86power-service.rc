@@ -1,0 +1,4 @@
+service vendor.x86power /vendor/bin/hw/x86power-service
+    class hal
+    user root
+    group system
