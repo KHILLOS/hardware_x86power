@@ -17,7 +17,23 @@ cc_library_shared {
         "liblog",
         "libcutils",
     ],
-    vendor_available: true,
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}
+
+cc_library_shared {
+    name: "power.x86.vendor",
+    stem: "power.x86",
+    vendor: true,
+    srcs: ["power.c"],
+    relative_install_path: "hw",
+    header_libs: ["libhardware_headers"],
+    shared_libs: [
+        "liblog",
+        "libcutils",
+    ],
     cflags: [
         "-Wall",
         "-Werror",
@@ -35,6 +51,35 @@ cc_binary {
     ],
     required: ["power.x86"],
     vendor_available: true,
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}
+
+cc_binary {
+    name: "x86power-service",
+    defaults: ["android.hardware.power-ndk_shared"],
+    vendor: true,
+    relative_install_path: "hw",
+    srcs: [
+        "aidl/main.cpp",
+        "aidl/Power.cpp",
+    ],
+    init_rc: ["aidl/x86power-service.rc"],
+    vintf_fragments: ["aidl/x86power-service.xml"],
+    required: ["power.x86.vendor"],
+    shared_libs: [
+        "android.hardware.common-V2-ndk",
+        "android.hardware.common.fmq-V1-ndk",
+        "libbase",
+        "libbinder_ndk",
+        "libcutils",
+        "libfmq",
+        "libhardware",
+        "liblog",
+        "libutils",
+    ],
     cflags: [
         "-Wall",
         "-Werror",
